@@ -7,11 +7,37 @@ export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // No validation - just redirect to dashboard
-    router.push('/dashboard');
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Login failed');
+        setIsLoading(false);
+        return;
+      }
+
+      // Redirect to dashboard on success
+      router.push('/dashboard');
+    } catch (err) {
+      setError('An error occurred during login');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -25,9 +51,15 @@ export default function LoginPage() {
         </div>
         
         <form onSubmit={handleLogin} className="space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Username
+              Username or Email
             </label>
             <input
               id="username"
@@ -35,7 +67,9 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              placeholder="Enter username"
+              placeholder="Enter username or email"
+              required
+              disabled={isLoading}
             />
           </div>
           
@@ -50,15 +84,24 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               placeholder="Enter password"
+              required
+              disabled={isLoading}
             />
           </div>
           
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg"
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Login
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
+
+          <div className="text-center text-sm text-gray-600 mt-4">
+            <p>Default credentials:</p>
+            <p className="font-mono text-xs mt-1">admin@exe.lk / admin123</p>
+            <p className="font-mono text-xs">user@exe.lk / user123</p>
+          </div>
         </form>
       </div>
     </div>
